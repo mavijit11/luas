@@ -16,7 +16,6 @@
       --muted: #a3aea5;
       --red: #ed4248;
       --green: #38d982;
-      --yellow: #f5c451;
       --border: #303a32;
     }
 
@@ -71,7 +70,6 @@
       height: 8px;
       background: var(--green);
       border-radius: 50%;
-      box-shadow: 0 0 10px #38d98280;
     }
 
     .eyebrow {
@@ -114,11 +112,38 @@
       border-radius: 12px;
       font-size: 16px;
       font-weight: 600;
-      outline: none;
     }
 
-    select:focus {
-      border-color: var(--green);
+    .nearest-button {
+      width: 100%;
+      margin-top: 12px;
+      padding: 15px;
+      background: #243c30;
+      color: var(--green);
+      border: 1px solid #385c47;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .nearest-button:disabled {
+      opacity: 0.6;
+      cursor: wait;
+    }
+
+    .nearest-result {
+      display: none;
+      background: #202b23;
+      border: 1px solid #385c47;
+      border-radius: 14px;
+      padding: 15px;
+      margin-top: 12px;
+      line-height: 1.6;
+    }
+
+    .nearest-result strong {
+      color: var(--green);
     }
 
     .service-message {
@@ -283,10 +308,6 @@
       cursor: pointer;
     }
 
-    .refresh-button:hover {
-      border-color: var(--green);
-    }
-
     @media (min-width: 600px) {
       .container {
         padding-top: 40px;
@@ -308,16 +329,25 @@
 
     <section class="selector-card">
       <label for="stopSelect">YOUR LUAS STOP</label>
+
       <select id="stopSelect">
         <option value="MYS">Loading stops...</option>
       </select>
+
+      <button class="nearest-button" id="nearestButton">
+        📍 Find nearest stop
+      </button>
+
+      <div class="nearest-result" id="nearestResult"></div>
     </section>
 
     <div id="error" class="error" role="alert"></div>
 
     <section class="service-message">
       <strong>Service information</strong>
-      <div id="serviceMessage">Waiting for service information...</div>
+      <div id="serviceMessage">
+        Waiting for service information...
+      </div>
     </section>
 
     <div id="directions">
@@ -326,7 +356,7 @@
 
     <div class="status">
       <div id="lastUpdated">Last updated: —</div>
-      <div id="refreshCountdown">Auto-refresh every 20 seconds</div>
+      <div>Auto-refresh every 20 seconds</div>
     </div>
 
     <button class="refresh-button" id="refreshButton">
@@ -342,16 +372,19 @@
 
   <script>
     const API = "https://luas-class.kluxy.app";
-    const REFRESH_INTERVAL = 20_000;
+    const REFRESH_INTERVAL = 20000;
+    const EARTH_RADIUS_KM = 6371;
+    const WALKING_SPEED_KMH = 5;
 
     const stopSelect = document.getElementById("stopSelect");
     const directionsElement = document.getElementById("directions");
     const serviceMessage = document.getElementById("serviceMessage");
     const lastUpdated = document.getElementById("lastUpdated");
     const errorElement = document.getElementById("error");
+    const nearestButton = document.getElementById("nearestButton");
+    const nearestResult = document.getElementById("nearestResult");
 
     let stops = [];
-    let refreshTimer;
     let isLoading = false;
 
     function showError(message) {
@@ -381,15 +414,17 @@
         const data = await fetchJSON(`${API}/stops`);
 
         if (!Array.isArray(data.stops)) {
-          throw new Error("The stop list has an unexpected format.");
+          throw new Error("Unexpected stop list format.");
         }
 
         stops = data.stops;
 
-        const savedStop = localStorage.getItem("myLUAS-stop") || "MYS";
-        const selectedStop = stops.some(s => s.id === savedStop)
-          ? savedStop
-          : "MYS";
+        const savedStop =
+          localStorage.getItem("myLUAS-stop") || "MYS";
+
+        const selectedStop = stops.some(
+          stop => stop.id === savedStop
+        ) ? savedStop : "MYS";
 
         stopSelect.innerHTML = "";
 
@@ -401,6 +436,7 @@
 
         stops.forEach(stop => {
           const option = document.createElement("option");
+
           option.value = stop.id;
           option.textContent = stop.name;
 
@@ -414,16 +450,14 @@
         stopSelect.append(redGroup, greenGroup);
         stopSelect.value = selectedStop;
 
-        if (!stopSelect.value) {
-          stopSelect.value = stops[0]?.id || "";
+        if (!stopSelect.value && stops.length) {
+          stopSelect.value = stops[0].id;
         }
 
         await loadForecast();
 
       } catch (error) {
         showError("Could not load stops: " + error.message);
-        stopSelect.innerHTML =
-          '<option value="MYS">MYS — Default stop</option>';
       }
     }
 
@@ -462,10 +496,11 @@
           });
 
       } catch (error) {
-        showError("Could not load tram forecasts: " + error.message);
+        showError("Could not load forecasts: " + error.message);
+
         directionsElement.innerHTML =
-          '<div class="empty">Forecasts unavailable. Please try again.</div>';
-        serviceMessage.textContent = "Service information unavailable.";
+          '<div class="empty">Forecasts unavailable.</div>';
+
       } finally {
         isLoading = false;
       }
@@ -476,11 +511,14 @@
 
       if (!directions.length) {
         directionsElement.innerHTML =
-          '<div class="empty">No directions available for this stop.</div>';
+          '<div class="empty">No directions available.</div>';
         return;
       }
 
-      const stop = stops.find(s => s.id === stopSelect.value);
+      const stop = stops.find(
+        s => s.id === stopSelect.value
+      );
+
       const line = stop?.line || "red";
 
       directions.forEach((direction, index) => {
@@ -488,12 +526,16 @@
         heading.className = "line-heading";
 
         const dot = document.createElement("span");
-        dot.className = "line-dot " +
+        dot.className =
+          "line-dot " +
           (line === "red" ? "red-dot" : "green-dot");
 
-        heading.append(dot, document.createTextNode(
-          `${line.toUpperCase()} LINE · Direction ${index + 1}`
-        ));
+        heading.append(
+          dot,
+          document.createTextNode(
+            `${line.toUpperCase()} LINE · Direction ${index + 1}`
+          )
+        );
 
         const card = document.createElement("section");
         card.className = "direction-card";
@@ -520,11 +562,12 @@
 
           const destination = document.createElement("div");
           destination.className = "destination";
-          destination.textContent = tram.destination || "Unknown destination";
+          destination.textContent =
+            tram.destination || "Unknown destination";
 
-          const destinationSmall = document.createElement("small");
-          destinationSmall.textContent = "Destination";
-          destination.appendChild(destinationSmall);
+          const small = document.createElement("small");
+          small.textContent = "Destination";
+          destination.appendChild(small);
 
           const countdown = document.createElement("div");
           countdown.className = "countdown";
@@ -532,7 +575,9 @@
           const due = Number(tram.due);
 
           if (due === 0) {
-            countdown.innerHTML = '<span class="due">Due</span>';
+            countdown.innerHTML =
+              '<span class="due">Due</span>';
+
           } else if (Number.isFinite(due)) {
             const number = document.createElement("span");
             number.className = "number";
@@ -543,6 +588,7 @@
             unit.textContent = "min";
 
             countdown.append(number, unit);
+
           } else {
             countdown.textContent = "—";
           }
@@ -556,7 +602,167 @@
       });
     }
 
-    stopSelect.addEventListener("change", loadForecast);
+    // Haversine formula: distance between two points on Earth.
+    function haversine(lat1, lng1, lat2, lng2) {
+      const toRadians = degrees =>
+        degrees * Math.PI / 180;
+
+      const dLat = toRadians(lat2 - lat1);
+      const dLng = toRadians(lng2 - lng1);
+
+      const a =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos(toRadians(lat1)) *
+        Math.cos(toRadians(lat2)) *
+        Math.sin(dLng / 2) ** 2;
+
+      const c = 2 * Math.atan2(
+        Math.sqrt(a),
+        Math.sqrt(1 - a)
+      );
+
+      return EARTH_RADIUS_KM * c;
+    }
+
+    function findNearestStop(userLat, userLng) {
+      let nearestStop = null;
+      let shortestDistance = Infinity;
+
+      stops.forEach(stop => {
+        const lat = Number(stop.lat);
+        const lng = Number(stop.lng);
+
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+          return;
+        }
+
+        const distance = haversine(
+          userLat,
+          userLng,
+          lat,
+          lng
+        );
+
+        if (distance < shortestDistance) {
+          shortestDistance = distance;
+          nearestStop = stop;
+        }
+      });
+
+      if (!nearestStop) {
+        throw new Error("No stops have valid coordinates.");
+      }
+
+      return {
+        stop: nearestStop,
+        distance: shortestDistance
+      };
+    }
+
+    function findNearest() {
+      clearError();
+
+      if (!stops.length) {
+        showError("Stops have not loaded yet.");
+        return;
+      }
+
+      if (!navigator.geolocation) {
+        showError("Your browser does not support geolocation.");
+        return;
+      }
+
+      nearestButton.disabled = true;
+      nearestButton.textContent = "Finding your location...";
+
+      navigator.geolocation.getCurrentPosition(
+        async position => {
+          try {
+            const userLat = position.coords.latitude;
+            const userLng = position.coords.longitude;
+
+            const result = findNearestStop(userLat, userLng);
+
+            const nearest = result.stop;
+            const distance = result.distance;
+
+            const walkingMinutes =
+              (distance / WALKING_SPEED_KMH) * 60;
+
+            const roundedMinutes =
+              Math.max(1, Math.round(walkingMinutes));
+
+            // Automatically select nearest stop.
+            stopSelect.value = nearest.id;
+
+            // Remember the nearest stop.
+            localStorage.setItem("myLUAS-stop", nearest.id);
+
+            // Show distance and estimated walking time.
+            nearestResult.style.display = "block";
+
+            nearestResult.innerHTML = `
+              <strong>📍 Nearest Luas stop</strong><br>
+              ${nearest.name}<br>
+              Distance: ${distance.toFixed(2)} km<br>
+              Estimated walking time: ${roundedMinutes} minutes
+              <br><small>Estimated at 5 km/h</small>
+            `;
+
+            // Load live tram forecast for nearest stop.
+            await loadForecast();
+
+          } catch (error) {
+            showError(error.message);
+
+          } finally {
+            nearestButton.disabled = false;
+            nearestButton.textContent = "📍 Find nearest stop";
+          }
+        },
+
+        error => {
+          let message;
+
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              message =
+                "Location permission denied. Please allow location access.";
+              break;
+
+            case error.POSITION_UNAVAILABLE:
+              message = "Your location is unavailable.";
+              break;
+
+            case error.TIMEOUT:
+              message = "Location request timed out. Please try again.";
+              break;
+
+            default:
+              message = "Unable to determine your location.";
+          }
+
+          showError(message);
+
+          nearestButton.disabled = false;
+          nearestButton.textContent = "📍 Find nearest stop";
+        },
+
+        {
+          enableHighAccuracy: true,
+          timeout: 15000,
+          maximumAge: 0
+        }
+      );
+    }
+
+    stopSelect.addEventListener("change", () => {
+      nearestResult.style.display = "none";
+      loadForecast();
+    });
+
+    nearestButton.addEventListener("click", findNearest);
+
     document.getElementById("refreshButton")
       .addEventListener("click", loadForecast);
 
