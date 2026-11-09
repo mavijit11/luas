@@ -4,271 +4,320 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#101411">
-  <title>myLUAS — Live Tram Times</title>
+  <meta name="theme-color" content="#101610">
+  <title>myLUAS — Dublin Tram Tracker</title>
 
   <style>
     :root {
-      --bg: #101411;
-      --surface: #1a201c;
-      --surface2: #242c26;
-      --text: #f4f7f4;
-      --muted: #a3aea5;
-      --red: #ed4248;
-      --green: #38d982;
-      --yellow: #f2d68b;
-      --border: #303a32;
+      --bg: #101610;
+      --surface: #19211b;
+      --surface-2: #202a22;
+      --border: rgba(220, 255, 220, .12);
+      --green: #42e58b;
+      --lime: #d7ff91;
+      --red: #ff5364;
+      --text: #f4f7f3;
+      --muted: #9ba69d;
+      --amber: #f2d48b;
+      --radius: 22px;
     }
 
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
-      background: var(--bg);
+      background:
+        radial-gradient(ellipse at 15% 0%, rgba(51, 107, 67, .18), transparent 35%),
+        var(--bg);
       color: var(--text);
-      font-family: Inter, -apple-system, BlinkMacSystemFont,
-        "Segoe UI", Roboto, Arial, sans-serif;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI",
+                   Roboto, Arial, sans-serif;
       min-height: 100vh;
     }
 
-    .container {
-      width: min(100%, 680px);
-      margin: auto;
-      padding: 24px 18px 30px;
+    button, select { font: inherit; }
+
+    button {
+      cursor: pointer;
+      transition: transform .2s, background .2s, border-color .2s;
     }
 
-    header {
+    button:hover { transform: translateY(-1px); }
+
+    .app {
+      max-width: 1100px;
+      margin: auto;
+      padding: 28px 22px 40px;
+    }
+
+    .topbar {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      margin-bottom: 28px;
+      justify-content: space-between;
+      margin-bottom: 36px;
     }
 
     .logo {
-      font-size: 28px;
-      font-weight: 900;
-      letter-spacing: -1.5px;
+      font-size: 32px;
+      font-weight: 850;
+      letter-spacing: -1.8px;
     }
 
-    .logo span {
-      color: var(--green);
-    }
+    .logo span { color: var(--green); }
 
-    .live-indicator {
-      font-size: 12px;
-      color: var(--green);
+    .live {
       display: flex;
       align-items: center;
-      gap: 7px;
-      font-weight: 700;
+      gap: 9px;
+      color: var(--green);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
     }
 
-    .live-indicator::before {
-      content: "";
-      width: 8px;
-      height: 8px;
-      background: var(--green);
+    .live-dot {
+      width: 9px;
+      height: 9px;
       border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 15px var(--green);
+      animation: pulse 1.8s infinite;
+    }
+
+    @keyframes pulse {
+      50% { opacity: .45; box-shadow: 0 0 4px var(--green); }
     }
 
     .eyebrow {
       color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 2px;
       font-size: 11px;
-      font-weight: 700;
-      margin-bottom: 8px;
+      font-weight: 800;
+      letter-spacing: 3px;
+      text-transform: uppercase;
     }
 
     h1 {
-      font-size: clamp(28px, 7vw, 40px);
-      letter-spacing: -1.5px;
-      margin: 0 0 22px;
+      font-size: clamp(32px, 5vw, 52px);
+      line-height: 1.08;
+      letter-spacing: -2px;
+      margin: 12px 0 28px;
     }
 
-    .selector-card {
-      background: var(--surface);
-      padding: 18px;
+    h1 span { color: var(--green); }
+
+    .dashboard {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    .panel {
+      background: linear-gradient(145deg, rgba(31, 42, 33, .96),
+                                     rgba(23, 31, 25, .96));
       border: 1px solid var(--border);
-      border-radius: 18px;
-      margin-bottom: 18px;
+      border-radius: var(--radius);
+      overflow: hidden;
+      box-shadow: 0 12px 35px rgba(0, 0, 0, .14);
     }
 
-    label {
-      display: block;
-      font-size: 12px;
-      color: var(--muted);
-      margin-bottom: 10px;
-      font-weight: 700;
+    .panel-pad { padding: 24px; }
+
+    .stop-panel { grid-column: 1 / -1; }
+
+    .stop-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-top: 15px;
     }
 
     select {
       width: 100%;
-      padding: 15px;
-      background: var(--surface2);
-      color: white;
+      min-width: 0;
+      padding: 15px 16px;
       border: 1px solid var(--border);
-      border-radius: 12px;
-      font-size: 16px;
-      font-weight: 600;
+      border-radius: 14px;
+      color: var(--text);
+      background: var(--surface-2);
+      outline: none;
+      font-size: 17px;
+      font-weight: 650;
     }
 
-    button {
-      cursor: pointer;
+    select:focus { border-color: var(--green); }
+
+    select option {
+      background: #19211b;
+      color: white;
     }
 
-    .nearest-button {
+    .btn {
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      background: #28332a;
+      color: var(--text);
+      padding: 13px 16px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .btn.primary {
+      background: var(--green);
+      color: #07150c;
+      border-color: transparent;
+    }
+
+    .btn:disabled { opacity: .5; cursor: wait; }
+
+    .route-visual {
+      position: relative;
+      height: 155px;
+      margin-top: 22px;
+      overflow: hidden;
+      border-radius: 17px;
+      background:
+        radial-gradient(ellipse at 80% 30%, rgba(45, 100, 70, .25), transparent 40%),
+        linear-gradient(135deg, #18251b, #101711);
+      border: 1px solid var(--border);
+    }
+
+    .route-visual svg {
+      position: absolute;
       width: 100%;
-      margin-top: 12px;
-      padding: 15px;
-      background: #243c30;
-      color: var(--green);
-      border: 1px solid #385c47;
-      border-radius: 12px;
-      font-size: 15px;
-      font-weight: 800;
+      height: 100%;
+      inset: 0;
     }
 
-    .nearest-button:disabled {
-      opacity: 0.6;
-      cursor: wait;
+    .route-label {
+      position: absolute;
+      left: 18px;
+      bottom: 15px;
+      z-index: 1;
     }
 
-    .nearest-result {
-      display: none;
-      background: #202b23;
-      border: 1px solid #385c47;
-      border-radius: 14px;
-      padding: 15px;
-      margin-top: 12px;
-      line-height: 1.6;
-    }
-
-    .nearest-result strong {
-      color: var(--green);
-    }
-
-    .service-message {
-      background: #252a20;
-      border: 1px solid #48452d;
-      border-radius: 14px;
-      padding: 15px;
-      margin-bottom: 22px;
-      font-size: 14px;
-      line-height: 1.5;
-      color: var(--yellow);
-    }
-
-    .service-message strong {
+    .route-label strong {
       display: block;
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      margin-bottom: 5px;
+      font-size: 19px;
+      margin-top: 5px;
     }
 
-    /* Weather panel */
+    .route-label small { color: var(--muted); }
 
-    .weather-card {
-      background: linear-gradient(145deg, #202b23, #1a201c);
-      border: 1px solid #385c47;
-      border-radius: 18px;
-      padding: 18px;
-      margin-bottom: 22px;
+    .route-badge {
+      position: absolute;
+      right: 14px;
+      top: 14px;
+      border: 1px solid var(--border);
+      background: rgba(15, 22, 16, .75);
+      border-radius: 30px;
+      padding: 8px 11px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 1px;
+    }
+
+    .service {
+      grid-column: 1 / -1;
+      background: rgba(215, 255, 145, .07);
+      border-color: rgba(215, 255, 145, .2);
+    }
+
+    .service .eyebrow { color: var(--lime); }
+
+    #serviceMessage {
+      font-size: 15px;
+      line-height: 1.5;
+      margin-top: 9px;
+      color: #d5e6d7;
+    }
+
+    .weather {
+      position: relative;
+      background:
+        radial-gradient(circle at 90% 10%, rgba(66, 229, 139, .13), transparent 40%),
+        var(--surface);
     }
 
     .weather-top {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      gap: 12px;
+      gap: 15px;
+      align-items: flex-start;
     }
 
-    .weather-title {
-      color: var(--green);
-      font-size: 11px;
-      font-weight: 800;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
+    .weather-temp {
+      font-size: 58px;
+      line-height: 1;
+      font-weight: 850;
+      letter-spacing: -3px;
+      margin: 20px 0 6px;
     }
 
-    .weather-icon {
-      font-size: 38px;
-    }
-
-    .weather-description {
+    .weather-temp small {
+      font-size: 22px;
+      letter-spacing: 0;
       color: var(--muted);
-      font-size: 14px;
-      margin-top: 4px;
     }
 
-    .weather-temperature {
-      font-size: 44px;
-      font-weight: 900;
-      letter-spacing: -2px;
-      margin: 10px 0;
+    .weather-icon { font-size: 42px; }
+
+    .weather-desc {
+      color: var(--lime);
+      font-weight: 700;
+      font-size: 15px;
     }
 
-    .weather-details {
+    .weather-stats {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 8px;
-      margin-top: 15px;
+      margin-top: 24px;
     }
 
-    .weather-detail {
-      background: #151b17;
-      padding: 12px 8px;
-      border-radius: 10px;
-      text-align: center;
+    .stat {
+      background: rgba(255,255,255,.035);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 10px;
     }
 
-    .weather-detail .value {
-      font-size: 17px;
-      font-weight: 800;
-    }
-
-    .weather-detail .label {
+    .stat small {
+      display: block;
       color: var(--muted);
-      font-size: 10px;
-      margin-top: 5px;
-      font-weight: 500;
+      font-size: 11px;
+      margin-bottom: 7px;
     }
 
-    .weather-advice {
-      margin-top: 14px;
-      background: #252a20;
-      border-radius: 10px;
-      padding: 12px;
-      color: var(--yellow);
+    .stat strong { font-size: 16px; }
+
+    .travel-tip {
+      margin-top: 16px;
+      padding: 13px;
+      border-radius: 12px;
+      background: rgba(215,255,145,.07);
+      color: #dcebcf;
       font-size: 13px;
       line-height: 1.5;
     }
 
-    .weather-updated {
-      color: var(--muted);
-      font-size: 10px;
-      margin-top: 12px;
+    .forecast-section { grid-column: 1 / -1; }
+
+    .section-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 10px 0 14px;
+      gap: 10px;
     }
 
-    .weather-error {
-      display: none;
-      color: #ffb9bd;
-      font-size: 12px;
-      margin-top: 10px;
-    }
-
-    .line-heading {
+    .line-title {
       display: flex;
       align-items: center;
       gap: 10px;
-      margin: 25px 0 12px;
-      font-size: 13px;
-      color: var(--muted);
-      font-weight: 800;
-      letter-spacing: 1px;
+      font-size: 12px;
+      font-weight: 850;
+      letter-spacing: 2px;
+      color: #b6c0b8;
       text-transform: uppercase;
     }
 
@@ -276,832 +325,620 @@
       width: 10px;
       height: 10px;
       border-radius: 50%;
+      flex-shrink: 0;
     }
 
-    .red-dot {
-      background: var(--red);
-    }
+    .line-dot.red { background: var(--red); box-shadow: 0 0 12px #ff536455; }
+    .line-dot.green { background: var(--green); box-shadow: 0 0 12px #42e58b55; }
 
-    .green-dot {
-      background: var(--green);
-    }
+    .direction-card { margin-bottom: 15px; }
 
-    .direction-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 18px;
-      margin-bottom: 14px;
-      overflow: hidden;
-    }
-
-    .direction-header {
-      padding: 17px 18px;
+    .direction-head {
+      padding: 20px 23px;
       border-bottom: 1px solid var(--border);
-      font-size: 15px;
-      font-weight: 700;
+      font-size: 18px;
+      font-weight: 750;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
-    .tram-list {
-      padding: 0 18px;
+    .direction-head small {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 500;
     }
+
+    .tram-list { padding: 0 23px; }
 
     .tram {
       display: flex;
-      align-items: center;
       justify-content: space-between;
-      gap: 12px;
-      padding: 17px 0;
+      align-items: center;
+      gap: 14px;
+      padding: 19px 0;
       border-bottom: 1px solid var(--border);
     }
 
-    .tram:last-child {
-      border-bottom: none;
+    .tram:last-child { border-bottom: none; }
+
+    .tram-destination {
+      font-size: 16px;
+      font-weight: 750;
     }
 
-    .destination {
-      font-size: 14px;
-      font-weight: 600;
-      line-height: 1.4;
-    }
-
-    .destination small {
-      display: block;
+    .tram-sub {
+      font-size: 12px;
       color: var(--muted);
-      font-size: 11px;
-      margin-top: 4px;
-      font-weight: 500;
+      margin-top: 5px;
     }
 
     .countdown {
       display: flex;
       align-items: baseline;
-      gap: 4px;
-      white-space: nowrap;
+      gap: 5px;
+      flex-shrink: 0;
     }
 
-    .countdown .number {
-      font-size: 32px;
-      font-weight: 900;
-      letter-spacing: -1px;
+    .countdown strong {
+      font-size: 40px;
       line-height: 1;
+      letter-spacing: -2px;
+      font-weight: 850;
     }
 
-    .countdown .unit {
+    .countdown span {
       font-size: 12px;
       color: var(--muted);
     }
 
-    .due {
+    .countdown.due strong {
+      font-size: 21px;
+      letter-spacing: 0;
       color: var(--green);
-      font-size: 20px;
-      font-weight: 900;
     }
 
     .empty {
+      padding: 22px 0;
       color: var(--muted);
       font-size: 14px;
-      padding: 20px 0;
-    }
-
-    .status {
-      margin-top: 20px;
-      color: var(--muted);
-      font-size: 12px;
-      text-align: center;
-      line-height: 1.6;
     }
 
     .error {
       display: none;
-      background: #391d20;
-      border: 1px solid #853c42;
-      color: #ffb9bd;
-      padding: 15px;
-      border-radius: 12px;
-      margin-bottom: 20px;
-      font-size: 14px;
+      margin: 14px 0;
+      padding: 14px 16px;
+      background: rgba(255, 83, 100, .1);
+      border: 1px solid rgba(255, 83, 100, .3);
+      color: #ffb7bd;
+      border-radius: 13px;
       line-height: 1.5;
+      font-size: 13px;
       overflow-wrap: anywhere;
     }
 
-    footer {
+    .error.show { display: block; }
+
+    .bottom {
       text-align: center;
-      color: #6f7a71;
+      padding: 25px 10px 10px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.8;
+    }
+
+    .refresh-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin: 18px 0;
+    }
+
+    #updated {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .footer {
+      border-top: 1px solid var(--border);
+      margin-top: 30px;
+      padding-top: 20px;
+      text-align: center;
+      color: #738078;
       font-size: 11px;
-      line-height: 1.6;
-      margin-top: 32px;
+      letter-spacing: .3px;
     }
 
-    .refresh-button {
-      display: block;
-      margin: 16px auto 0;
-      background: var(--surface2);
-      color: var(--text);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 10px 16px;
-      font-size: 13px;
-    }
+    .loading { color: var(--muted); padding: 20px; }
 
-    @media (min-width: 600px) {
-      .container {
-        padding-top: 40px;
+    @media (min-width: 760px) {
+      .dashboard { grid-template-columns: 1fr 1fr; }
+      .stop-panel { grid-column: 1 / -1; }
+      .forecast-section { grid-column: 1 / -1; }
+      .arrivals-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
       }
+      .direction-card { margin-bottom: 0; }
+    }
+
+    @media (max-width: 560px) {
+      .app { padding: 22px 15px 30px; }
+      .topbar { margin-bottom: 28px; }
+      .logo { font-size: 28px; }
+      h1 { margin-bottom: 22px; }
+      .panel-pad { padding: 19px; }
+      .stop-row { flex-direction: column; align-items: stretch; }
+      .stop-row .btn { width: 100%; }
+      .weather-stats { gap: 6px; }
+      .stat { padding: 10px 8px; }
+      .stat strong { font-size: 14px; }
+      .tram-list { padding: 0 17px; }
+      .direction-head { padding: 17px; }
+      .countdown strong { font-size: 35px; }
+      .route-visual { height: 135px; }
     }
   </style>
 </head>
 
 <body>
-  <main class="container">
-
-    <header>
+  <main class="app">
+    <header class="topbar">
       <div class="logo">my<span>LUAS</span></div>
-      <div class="live-indicator">LIVE SERVICE</div>
+      <div class="live"><span class="live-dot"></span> LIVE SERVICE</div>
     </header>
 
-    <div class="eyebrow">Dublin Tram Tracker</div>
-    <h1>Where's your tram?</h1>
+    <div class="eyebrow">Dublin tram tracker</div>
+    <h1>Where's your <span>tram?</span></h1>
 
-    <section class="selector-card">
-      <label for="stopSelect">YOUR LUAS STOP</label>
+    <div class="dashboard">
+      <section class="panel stop-panel">
+        <div class="panel-pad">
+          <div class="eyebrow">Your Luas stop</div>
+          <div class="stop-row">
+            <select id="stopSelect" aria-label="Choose Luas stop">
+              <option>Loading stops…</option>
+            </select>
+            <button class="btn primary" id="nearestBtn">◎ Nearest stop</button>
+          </div>
 
-      <select id="stopSelect">
-        <option value="MYS">Loading stops...</option>
-      </select>
-
-      <button class="nearest-button" id="nearestButton">
-        📍 Find nearest stop
-      </button>
-
-      <div class="nearest-result" id="nearestResult"></div>
-    </section>
-
-    <div id="error" class="error" role="alert"></div>
-
-    <section class="service-message">
-      <strong>Service information</strong>
-      <div id="serviceMessage">
-        Waiting for service information...
-      </div>
-    </section>
-
-    <!-- Open-Meteo weather panel -->
-    <section class="weather-card">
-      <div class="weather-top">
-        <div>
-          <div class="weather-title">Weather at your stop</div>
-          <div id="weatherStop" class="weather-description">
-            Waiting for stop information...
+          <div class="route-visual">
+            <svg viewBox="0 0 700 160" preserveAspectRatio="none" aria-hidden="true">
+              <path d="M-20 130 C100 80, 150 150, 260 95 S450 15, 720 80"
+                    fill="none" stroke="#25372a" stroke-width="28"/>
+              <path d="M-20 130 C100 80, 150 150, 260 95 S450 15, 720 80"
+                    fill="none" stroke="#42e58b" stroke-width="3" stroke-dasharray="8 8"/>
+              <path d="M50 0 L150 160 M350 0 L420 160 M600 0 L520 160"
+                    stroke="#ffffff" stroke-opacity=".04" stroke-width="2"/>
+              <circle cx="260" cy="95" r="12" fill="#42e58b"/>
+              <circle cx="260" cy="95" r="5" fill="#102016"/>
+              <circle cx="500" cy="57" r="5" fill="#d7ff91"/>
+            </svg>
+            <div class="route-badge">LIVE ARRIVALS</div>
+            <div class="route-label">
+              <small>YOUR SELECTED STOP</small>
+              <strong id="routeStopName">Loading…</strong>
+            </div>
           </div>
         </div>
-        <div class="weather-icon" id="weatherIcon">🌤️</div>
-      </div>
+      </section>
 
-      <div class="weather-temperature" id="weatherTemperature">
-        --°C
-      </div>
-
-      <div class="weather-description" id="weatherDescription">
-        Loading weather...
-      </div>
-
-      <div class="weather-details">
-        <div class="weather-detail">
-          <div class="value" id="weatherRain">--</div>
-          <div class="label">Precipitation</div>
+      <section class="panel service">
+        <div class="panel-pad">
+          <div class="eyebrow">Service information</div>
+          <div id="serviceMessage">Loading service information…</div>
         </div>
+      </section>
 
-        <div class="weather-detail">
-          <div class="value" id="weatherProbability">--</div>
-          <div class="label">Rain probability</div>
+      <section class="panel weather">
+        <div class="panel-pad">
+          <div class="weather-top">
+            <div>
+              <div class="eyebrow">Weather at your stop</div>
+              <div class="weather-temp" id="temperature">--<small>°C</small></div>
+              <div class="weather-desc" id="weatherDescription">Loading weather…</div>
+            </div>
+            <div class="weather-icon" id="weatherIcon">🌤️</div>
+          </div>
+
+          <div class="weather-stats">
+            <div class="stat">
+              <small>Rain</small>
+              <strong id="rain">-- mm</strong>
+            </div>
+            <div class="stat">
+              <small>Wind</small>
+              <strong id="wind">-- km/h</strong>
+            </div>
+            <div class="stat">
+              <small>Feels like</small>
+              <strong id="feels">--°C</strong>
+            </div>
+          </div>
+
+          <div class="travel-tip" id="travelTip">
+            Checking conditions for your journey…
+          </div>
+          <div class="tram-sub" id="weatherUpdated" style="margin-top:12px">
+            Weather data from Open-Meteo
+          </div>
         </div>
+      </section>
 
-        <div class="weather-detail">
-          <div class="value" id="weatherWind">--</div>
-          <div class="label">Wind km/h</div>
+      <section class="panel">
+        <div class="panel-pad">
+          <div class="eyebrow">Your journey</div>
+          <h2 style="font-size:23px;margin:10px 0">Plan your arrival</h2>
+          <p style="color:var(--muted);font-size:14px;line-height:1.6">
+            Live tram times, local weather and the nearest stop — all in one place.
+          </p>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn" id="refreshBtn">↻ Refresh now</button>
+            <button class="btn" id="gpsBtn">⌖ Find my stop</button>
+          </div>
         </div>
-      </div>
+      </section>
 
-      <div class="weather-advice" id="weatherAdvice">
-        Checking weather conditions...
-      </div>
+      <div class="error" id="errorBox" role="alert"></div>
 
-      <div class="weather-updated" id="weatherUpdated">
-        Weather source: Open-Meteo
-      </div>
-
-      <div class="weather-error" id="weatherError"></div>
-    </section>
-
-    <div id="directions">
-      <div class="empty">Loading tram forecasts...</div>
+      <section class="forecast-section">
+        <div class="section-heading">
+          <div class="line-title">
+            <span class="line-dot" id="lineDot"></span>
+            <span id="lineName">LUAS LINE</span>
+          </div>
+          <div class="eyebrow">Next arrivals</div>
+        </div>
+        <div class="arrivals-grid" id="directions">
+          <div class="panel loading">Loading live tram arrivals…</div>
+        </div>
+      </section>
     </div>
 
-    <div class="status">
-      <div id="lastUpdated">Last updated: —</div>
-      <div>Auto-refresh every 20 seconds</div>
+    <div class="refresh-row">
+      <div id="updated">Last updated: waiting for data</div>
     </div>
+    <div class="bottom">Automatic refresh every 20 seconds</div>
 
-    <button class="refresh-button" id="refreshButton">
-      ↻ Refresh now
-    </button>
-
-    <footer>
-      Data: Transport Infrastructure Ireland & Open-Meteo.<br>
-      Built by Avijit Mondal for BDAIB.
+    <footer class="footer">
+      Data: Transport Infrastructure Ireland · Weather: Open-Meteo<br>
+      Built by Avijit Mondal for BDAIB
     </footer>
-
   </main>
 
-  <script>
-    const API = "https://luas-class.kluxy.app";
-    const WEATHER_API = "https://api.open-meteo.com/v1/forecast";
+<script>
+  const API = "https://luas-class.kluxy.app";
+  const WEATHER_API = "https://api.open-meteo.com/v1/forecast";
+  const REFRESH_MS = 20000;
 
-    const REFRESH_INTERVAL = 20000;
-    const EARTH_RADIUS_KM = 6371;
-    const WALKING_SPEED_KMH = 5;
+  const $ = id => document.getElementById(id);
 
-    const stopSelect = document.getElementById("stopSelect");
-    const directionsElement = document.getElementById("directions");
-    const serviceMessage = document.getElementById("serviceMessage");
-    const lastUpdated = document.getElementById("lastUpdated");
-    const errorElement = document.getElementById("error");
-    const nearestButton = document.getElementById("nearestButton");
-    const nearestResult = document.getElementById("nearestResult");
+  let stops = [];
+  let selectedStop = null;
+  let refreshTimer = null;
+  let weatherTimer = null;
+  let isRefreshing = false;
 
-    let stops = [];
-    let isLoading = false;
-    let weatherLoading = false;
+  function showError(message) {
+    const box = $("errorBox");
+    box.textContent = message;
+    box.classList.add("show");
+  }
 
-    function showError(message) {
-      errorElement.style.display = "block";
-      errorElement.textContent = "⚠ " + message;
+  function clearError() {
+    $("errorBox").textContent = "";
+    $("errorBox").classList.remove("show");
+  }
+
+  async function fetchJSON(url) {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Request failed (${response.status})`);
     }
+    return response.json();
+  }
 
-    function clearError() {
-      errorElement.style.display = "none";
-      errorElement.textContent = "";
-    }
+  function escapeHTML(value) {
+    return String(value ?? "").replace(/[&<>"']/g, char => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;",
+      '"': "&quot;", "'": "&#39;"
+    }[char]));
+  }
 
-    async function fetchJSON(url) {
-      const response = await fetch(url);
+  async function loadStops() {
+    try {
+      const data = await fetchJSON(`${API}/stops`);
+      stops = data.stops || [];
 
-      if (!response.ok) {
-        throw new Error(
-          `HTTP ${response.status}: ${response.statusText}`
-        );
-      }
+      if (!stops.length) throw new Error("The stop list is empty.");
 
-      return response.json();
-    }
+      const select = $("stopSelect");
+      select.innerHTML = "";
 
-    async function loadStops() {
-      try {
-        const data = await fetchJSON(`${API}/stops`);
+      for (const line of ["red", "green"]) {
+        const group = document.createElement("optgroup");
+        group.label = line === "red" ? "Red Line" : "Green Line";
 
-        if (!Array.isArray(data.stops)) {
-          throw new Error("Unexpected stop list format.");
-        }
-
-        stops = data.stops;
-
-        const savedStop =
-          localStorage.getItem("myLUAS-stop") || "MYS";
-
-        const selectedStop = stops.some(
-          stop => stop.id === savedStop
-        ) ? savedStop : "MYS";
-
-        stopSelect.innerHTML = "";
-
-        const redGroup = document.createElement("optgroup");
-        redGroup.label = "Red Line";
-
-        const greenGroup = document.createElement("optgroup");
-        greenGroup.label = "Green Line";
-
-        stops.forEach(stop => {
-          const option = document.createElement("option");
-
-          option.value = stop.id;
-          option.textContent = stop.name;
-
-          if (stop.line === "red") {
-            redGroup.appendChild(option);
-          } else if (stop.line === "green") {
-            greenGroup.appendChild(option);
-          }
-        });
-
-        stopSelect.append(redGroup, greenGroup);
-        stopSelect.value = selectedStop;
-
-        if (!stopSelect.value && stops.length) {
-          stopSelect.value = stops[0].id;
-        }
-
-        await refreshAll();
-
-      } catch (error) {
-        showError("Could not load stops: " + error.message);
-      }
-    }
-
-    async function refreshAll() {
-      await Promise.allSettled([
-        loadForecast(),
-        loadWeather()
-      ]);
-    }
-
-    async function loadForecast() {
-      if (isLoading) return;
-
-      isLoading = true;
-
-      const stopId = stopSelect.value;
-
-      if (!stopId) {
-        showError("Please select a valid stop.");
-        isLoading = false;
-        return;
-      }
-
-      localStorage.setItem("myLUAS-stop", stopId);
-
-      try {
-        const data = await fetchJSON(
-          `${API}/forecast?stop=${encodeURIComponent(stopId)}`
-        );
-
-        serviceMessage.textContent =
-          data.message || "No service message available.";
-
-        renderDirections(data.directions || []);
-
-        lastUpdated.textContent =
-          "Last updated: " +
-          new Date().toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-            second: "2-digit"
+        stops.filter(s => s.line.toLowerCase() === line)
+          .sort((a, b) => a.name.localeCompare(b.name))
+          .forEach(stop => {
+            const option = document.createElement("option");
+            option.value = stop.id;
+            option.textContent = stop.name;
+            group.appendChild(option);
           });
 
-      } catch (error) {
-        showError("Could not load tram forecasts: " + error.message);
-
-        directionsElement.innerHTML =
-          '<div class="empty">Forecasts unavailable.</div>';
-
-      } finally {
-        isLoading = false;
+        select.appendChild(group);
       }
+
+      const saved = localStorage.getItem("myLUAS-stop");
+      selectedStop = stops.find(s => s.id === saved)
+                  || stops.find(s => s.id === "MYS")
+                  || stops[0];
+
+      select.value = selectedStop.id;
+      $("routeStopName").textContent = selectedStop.name;
+
+      await refreshAll();
+    } catch (error) {
+      showError("Could not load Luas stops: " + error.message);
+      $("directions").innerHTML =
+        '<div class="panel loading">Unable to load stops.</div>';
+    }
+  }
+
+  $("stopSelect").addEventListener("change", async event => {
+    const stop = stops.find(s => s.id === event.target.value);
+    if (!stop) return;
+
+    selectedStop = stop;
+    localStorage.setItem("myLUAS-stop", stop.id);
+    $("routeStopName").textContent = stop.name;
+
+    await refreshAll();
+  });
+
+  async function loadTrams() {
+    if (!selectedStop) return;
+
+    const data = await fetchJSON(
+      `${API}/forecast?stop=${encodeURIComponent(selectedStop.id)}`
+    );
+
+    $("serviceMessage").textContent =
+      data.message || "Live service information unavailable.";
+
+    const line = selectedStop.line.toLowerCase();
+    $("lineName").textContent = line.toUpperCase() + " LINE";
+    $("lineDot").className = "line-dot " + line;
+
+    const directions = data.directions || [];
+    const container = $("directions");
+
+    if (!directions.length) {
+      container.innerHTML =
+        '<div class="panel loading">No direction information available.</div>';
+      return;
     }
 
-    function renderDirections(directions) {
-      directionsElement.innerHTML = "";
+    container.innerHTML = directions.map((direction, index) => {
+      const trams = (direction.trams || []).slice(0, 3);
 
-      if (!directions.length) {
-        directionsElement.innerHTML =
-          '<div class="empty">No directions available.</div>';
-        return;
+      return `
+        <article class="panel direction-card">
+          <div class="direction-head">
+            <span>${escapeHTML(direction.name || `Direction ${index + 1}`)}</span>
+            <small>Direction ${index + 1}</small>
+          </div>
+          <div class="tram-list">
+            ${trams.length ? trams.map(tram => {
+              const due = Number(tram.due);
+              const isDue = due === 0;
+
+              return `
+                <div class="tram">
+                  <div>
+                    <div class="tram-destination">
+                      ${escapeHTML(tram.destination || "Unknown destination")}
+                    </div>
+                    <div class="tram-sub">Destination</div>
+                  </div>
+                  <div class="countdown ${isDue ? "due" : ""}">
+                    <strong>${isDue ? "Due" : escapeHTML(due)}</strong>
+                    ${isDue ? "" : "<span>min</span>"}
+                  </div>
+                </div>
+              `;
+            }).join("") : '<div class="empty">No trams currently listed.</div>'}
+          </div>
+        </article>
+      `;
+    }).join("");
+  }
+
+  function weatherInfo(code) {
+    const conditions = {
+      0: ["Clear sky", "☀️"],
+      1: ["Mainly clear", "🌤️"],
+      2: ["Partly cloudy", "⛅"],
+      3: ["Overcast", "☁️"],
+      45: ["Fog", "🌫️"],
+      48: ["Depositing rime fog", "🌫️"],
+      51: ["Light drizzle", "🌦️"],
+      53: ["Drizzle", "🌦️"],
+      55: ["Heavy drizzle", "🌧️"],
+      56: ["Freezing drizzle", "🌧️"],
+      57: ["Freezing drizzle", "🌧️"],
+      61: ["Light rain", "🌧️"],
+      63: ["Rain", "🌧️"],
+      65: ["Heavy rain", "🌧️"],
+      66: ["Freezing rain", "🌧️"],
+      67: ["Freezing rain", "🌧️"],
+      71: ["Light snow", "🌨️"],
+      73: ["Snow", "🌨️"],
+      75: ["Heavy snow", "❄️"],
+      77: ["Snow grains", "❄️"],
+      80: ["Rain showers", "🌦️"],
+      81: ["Rain showers", "🌧️"],
+      82: ["Heavy showers", "⛈️"],
+      85: ["Snow showers", "🌨️"],
+      86: ["Heavy snow showers", "🌨️"],
+      95: ["Thunderstorm", "⛈️"],
+      96: ["Thunderstorm with hail", "⛈️"],
+      99: ["Thunderstorm with hail", "⛈️"]
+    };
+    return conditions[code] || ["Weather conditions", "🌤️"];
+  }
+
+  async function loadWeather() {
+    if (!selectedStop) return;
+
+    const url = new URL(WEATHER_API);
+    url.searchParams.set("latitude", selectedStop.lat);
+    url.searchParams.set("longitude", selectedStop.lng);
+    url.searchParams.set("current",
+      "temperature_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m");
+    url.searchParams.set("timezone", "Europe/Dublin");
+
+    try {
+      const data = await fetchJSON(url.toString());
+      const current = data.current;
+
+      if (!current) throw new Error("Weather data is missing.");
+
+      const [description, icon] = weatherInfo(current.weather_code);
+      const temp = Math.round(current.temperature_2m);
+      const feels = Math.round(current.apparent_temperature);
+      const rain = Number(current.precipitation);
+      const wind = Math.round(current.wind_speed_10m);
+
+      $("temperature").innerHTML = `${temp}<small>°C</small>`;
+      $("weatherDescription").textContent = description;
+      $("weatherIcon").textContent = icon;
+      $("rain").textContent = `${rain.toFixed(1)} mm`;
+      $("wind").textContent = `${wind} km/h`;
+      $("feels").textContent = `${feels}°C`;
+
+      let advice;
+      if (rain >= 1 || [61,63,65,80,81,82,95,96,99].includes(current.weather_code)) {
+        advice = "☂ Rain is expected. Bring a waterproof jacket or umbrella and consider waiting indoors.";
+      } else if (wind >= 35) {
+        advice = "💨 It's windy. Allow extra time and take care while walking to the stop.";
+      } else if (temp <= 5) {
+        advice = "🧥 It's cold outside. Wrap up warmly while waiting for your tram.";
+      } else {
+        advice = "🚶 Conditions look reasonable for walking to your stop. Check the live tram times before leaving.";
       }
 
-      const stop = stops.find(
-        s => s.id === stopSelect.value
+      $("travelTip").textContent = advice;
+      $("weatherUpdated").textContent =
+        "Weather updated: " + new Date().toLocaleTimeString("en-IE");
+    } catch (error) {
+      $("weatherDescription").textContent = "Weather unavailable";
+      $("travelTip").textContent = "Weather data could not be loaded. Check your connection and try again.";
+      showError("Weather request failed: " + error.message);
+    }
+  }
+
+  async function refreshAll() {
+    if (isRefreshing || !selectedStop) return;
+    isRefreshing = true;
+    clearError();
+    $("refreshBtn").disabled = true;
+
+    try {
+      await Promise.all([loadTrams(), loadWeather()]);
+      $("updated").textContent =
+        "Last updated: " + new Date().toLocaleTimeString("en-IE");
+    } catch (error) {
+      showError("Could not refresh live Luas data: " + error.message);
+    } finally {
+      isRefreshing = false;
+      $("refreshBtn").disabled = false;
+    }
+  }
+
+  $("refreshBtn").addEventListener("click", refreshAll);
+
+  async function findNearestStop() {
+    if (!stops.length) return;
+
+    if (!navigator.geolocation) {
+      showError("Geolocation is not supported by this browser.");
+      return;
+    }
+
+    $("nearestBtn").disabled = true;
+    $("nearestBtn").textContent = "Finding…";
+
+    navigator.geolocation.getCurrentPosition(async position => {
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+
+      function distanceKm(stop) {
+        const toRad = degrees => degrees * Math.PI / 180;
+        const dLat = toRad(stop.lat - lat);
+        const dLng = toRad(stop.lng - lng);
+        const a = Math.sin(dLat / 2) ** 2 +
+          Math.cos(toRad(lat)) * Math.cos(toRad(stop.lat)) *
+          Math.sin(dLng / 2) ** 2;
+        return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      }
+
+      const nearest = stops.reduce((best, stop) =>
+        distanceKm(stop) < distanceKm(best) ? stop : best
       );
 
-      const line = stop?.line || "red";
-
-      directions.forEach((direction, index) => {
-        const heading = document.createElement("div");
-        heading.className = "line-heading";
-
-        const dot = document.createElement("span");
-        dot.className =
-          "line-dot " +
-          (line === "red" ? "red-dot" : "green-dot");
-
-        heading.append(
-          dot,
-          document.createTextNode(
-            `${line.toUpperCase()} LINE · Direction ${index + 1}`
-          )
-        );
-
-        const card = document.createElement("section");
-        card.className = "direction-card";
-
-        const header = document.createElement("div");
-        header.className = "direction-header";
-        header.textContent = direction.name || "Direction";
-
-        const tramList = document.createElement("div");
-        tramList.className = "tram-list";
-
-        const trams = (direction.trams || []).slice(0, 3);
-
-        if (!trams.length) {
-          const empty = document.createElement("div");
-          empty.className = "empty";
-          empty.textContent = "No trams currently available.";
-          tramList.appendChild(empty);
-        }
-
-        trams.forEach(tram => {
-          const row = document.createElement("div");
-          row.className = "tram";
-
-          const destination = document.createElement("div");
-          destination.className = "destination";
-          destination.textContent =
-            tram.destination || "Unknown destination";
-
-          const small = document.createElement("small");
-          small.textContent = "Destination";
-          destination.appendChild(small);
-
-          const countdown = document.createElement("div");
-          countdown.className = "countdown";
-
-          const due = Number(tram.due);
-
-          if (due === 0) {
-            countdown.innerHTML =
-              '<span class="due">Due</span>';
-
-          } else if (Number.isFinite(due)) {
-            const number = document.createElement("span");
-            number.className = "number";
-            number.textContent = due;
-
-            const unit = document.createElement("span");
-            unit.className = "unit";
-            unit.textContent = "min";
-
-            countdown.append(number, unit);
-
-          } else {
-            countdown.textContent = "—";
-          }
-
-          row.append(destination, countdown);
-          tramList.appendChild(row);
-        });
-
-        card.append(header, tramList);
-        directionsElement.append(heading, card);
-      });
-    }
-
-    // Haversine formula: distance between geographic coordinates.
-    function haversine(lat1, lng1, lat2, lng2) {
-      const toRadians = degrees =>
-        degrees * Math.PI / 180;
-
-      const dLat = toRadians(lat2 - lat1);
-      const dLng = toRadians(lng2 - lng1);
-
-      const a =
-        Math.sin(dLat / 2) ** 2 +
-        Math.cos(toRadians(lat1)) *
-        Math.cos(toRadians(lat2)) *
-        Math.sin(dLng / 2) ** 2;
-
-      const c = 2 * Math.atan2(
-        Math.sqrt(a),
-        Math.sqrt(1 - a)
-      );
-
-      return EARTH_RADIUS_KM * c;
-    }
-
-    function findNearestStop(userLat, userLng) {
-      let nearestStop = null;
-      let shortestDistance = Infinity;
-
-      stops.forEach(stop => {
-        const lat = Number(stop.lat);
-        const lng = Number(stop.lng);
-
-        if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-          return;
-        }
-
-        const distance = haversine(
-          userLat,
-          userLng,
-          lat,
-          lng
-        );
-
-        if (distance < shortestDistance) {
-          shortestDistance = distance;
-          nearestStop = stop;
-        }
-      });
-
-      if (!nearestStop) {
-        throw new Error("No stops have valid coordinates.");
-      }
-
-      return {
-        stop: nearestStop,
-        distance: shortestDistance
-      };
-    }
-
-    function findNearest() {
-      clearError();
-
-      if (!stops.length) {
-        showError("Stops have not loaded yet.");
-        return;
-      }
-
-      if (!navigator.geolocation) {
-        showError("Your browser does not support geolocation.");
-        return;
-      }
-
-      nearestButton.disabled = true;
-      nearestButton.textContent = "Finding your location...";
-
-      navigator.geolocation.getCurrentPosition(
-        async position => {
-          try {
-            const userLat = position.coords.latitude;
-            const userLng = position.coords.longitude;
-
-            const result = findNearestStop(userLat, userLng);
-
-            const nearest = result.stop;
-            const distance = result.distance;
-
-            const walkingMinutes =
-              (distance / WALKING_SPEED_KMH) * 60;
-
-            const roundedMinutes =
-              Math.max(1, Math.round(walkingMinutes));
-
-            stopSelect.value = nearest.id;
-
-            localStorage.setItem("myLUAS-stop", nearest.id);
-
-            nearestResult.style.display = "block";
-
-            nearestResult.innerHTML = `
-              <strong>📍 Nearest Luas stop</strong><br>
-              ${nearest.name}<br>
-              Distance: ${distance.toFixed(2)} km<br>
-              Estimated walking time: ${roundedMinutes} minutes
-              <br><small>Estimated at 5 km/h</small>
-            `;
-
-            await refreshAll();
-
-          } catch (error) {
-            showError(error.message);
-
-          } finally {
-            nearestButton.disabled = false;
-            nearestButton.textContent = "📍 Find nearest stop";
-          }
-        },
-
-        error => {
-          let message;
-
-          switch (error.code) {
-            case error.PERMISSION_DENIED:
-              message =
-                "Location permission denied. Please allow location access.";
-              break;
-
-            case error.POSITION_UNAVAILABLE:
-              message = "Your location is unavailable.";
-              break;
-
-            case error.TIMEOUT:
-              message = "Location request timed out. Please try again.";
-              break;
-
-            default:
-              message = "Unable to determine your location.";
-          }
-
-          showError(message);
-
-          nearestButton.disabled = false;
-          nearestButton.textContent = "📍 Find nearest stop";
-        },
-
-        {
-          enableHighAccuracy: true,
-          timeout: 15000,
-          maximumAge: 0
-        }
-      );
-    }
-
-    // Convert Open-Meteo WMO weather codes into readable descriptions.
-    function getWeatherInfo(code) {
-      const weatherCodes = {
-        0: ["Clear sky", "☀️"],
-        1: ["Mainly clear", "🌤️"],
-        2: ["Partly cloudy", "⛅"],
-        3: ["Overcast", "☁️"],
-        45: ["Fog", "🌫️"],
-        48: ["Depositing rime fog", "🌫️"],
-        51: ["Light drizzle", "🌦️"],
-        53: ["Moderate drizzle", "🌦️"],
-        55: ["Dense drizzle", "🌧️"],
-        56: ["Freezing drizzle", "🌧️"],
-        57: ["Heavy freezing drizzle", "🌧️"],
-        61: ["Light rain", "🌧️"],
-        63: ["Moderate rain", "🌧️"],
-        65: ["Heavy rain", "🌧️"],
-        66: ["Freezing rain", "🌧️"],
-        67: ["Heavy freezing rain", "🌧️"],
-        71: ["Light snow", "🌨️"],
-        73: ["Moderate snow", "🌨️"],
-        75: ["Heavy snow", "❄️"],
-        77: ["Snow grains", "❄️"],
-        80: ["Light rain showers", "🌦️"],
-        81: ["Moderate rain showers", "🌧️"],
-        82: ["Heavy rain showers", "🌧️"],
-        85: ["Snow showers", "🌨️"],
-        86: ["Heavy snow showers", "🌨️"],
-        95: ["Thunderstorm", "⛈️"],
-        96: ["Thunderstorm with hail", "⛈️"],
-        99: ["Heavy thunderstorm with hail", "⛈️"]
-      };
-
-      return weatherCodes[code] || ["Unknown conditions", "🌡️"];
-    }
-
-    async function loadWeather() {
-      if (weatherLoading) return;
-
-      const selectedStop = stops.find(
-        stop => stop.id === stopSelect.value
-      );
-
-      if (!selectedStop) return;
-
-      const lat = Number(selectedStop.lat);
-      const lng = Number(selectedStop.lng);
-
-      if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-        showWeatherError("The selected stop has invalid coordinates.");
-        return;
-      }
-
-      weatherLoading = true;
-
-      document.getElementById("weatherStop").textContent =
-        selectedStop.name;
-
-      document.getElementById("weatherError").style.display = "none";
-
-      try {
-        const url = new URL(WEATHER_API);
-
-        url.searchParams.set("latitude", lat);
-        url.searchParams.set("longitude", lng);
-
-        url.searchParams.set(
-          "current",
-          "temperature_2m,precipitation,weather_code,wind_speed_10m"
-        );
-
-        url.searchParams.set(
-          "hourly",
-          "precipitation_probability"
-        );
-
-        url.searchParams.set("forecast_days", "1");
-        url.searchParams.set("timezone", "auto");
-
-        const data = await fetchJSON(url.toString());
-
-        const current = data.current;
-
-        if (!current) {
-          throw new Error("Weather response has no current data.");
-        }
-
-        const temperature = current.temperature_2m;
-        const precipitation = current.precipitation;
-        const wind = current.wind_speed_10m;
-        const weatherCode = current.weather_code;
-
-        const weatherInfo = getWeatherInfo(weatherCode);
-
-        document.getElementById("weatherIcon").textContent =
-          weatherInfo[1];
-
-        document.getElementById("weatherTemperature").textContent =
-          `${Math.round(temperature)}°C`;
-
-        document.getElementById("weatherDescription").textContent =
-          weatherInfo[0];
-
-        document.getElementById("weatherRain").textContent =
-          `${Number(precipitation).toFixed(1)} mm`;
-
-        document.getElementById("weatherWind").textContent =
-          `${Math.round(wind)}`;
-
-        // Find precipitation probability for the current hour.
-        let rainProbability = null;
-
-        if (data.hourly?.time && data.hourly?.precipitation_probability) {
-          const currentHour = current.time.slice(0, 13);
-
-          const hourIndex = data.hourly.time.findIndex(
-            time => time.slice(0, 13) === currentHour
-          );
-
-          if (hourIndex >= 0) {
-            rainProbability =
-              data.hourly.precipitation_probability[hourIndex];
-          }
-        }
-
-        document.getElementById("weatherProbability").textContent =
-          rainProbability !== null
-            ? `${rainProbability}%`
-            : "N/A";
-
-        // Generate a practical travel recommendation.
-        let advice;
-
-        if (
-          precipitation > 0 ||
-          (rainProbability !== null && rainProbability >= 50) ||
-          [51, 53, 55, 56, 57, 61, 63, 65, 66, 67,
-           80, 81, 82, 95, 96, 99].includes(weatherCode)
-        ) {
-          advice =
-            "☔ Rain is possible or occurring. Consider bringing an umbrella or waiting indoors while checking your tram arrival.";
-        } else if (wind >= 40) {
-          advice =
-            "💨 Strong winds are expected. Take care while walking to the stop.";
-        } else if (temperature <= 5) {
-          advice =
-            "🧥 It is cold outside. Dress warmly while waiting for your Luas.";
-        } else {
-          advice =
-            "🌤️ Conditions look relatively dry. Check your live tram arrivals before heading to the stop.";
-        }
-
-        document.getElementById("weatherAdvice").textContent =
-          advice;
-
-        document.getElementById("weatherUpdated").textContent =
-          `Weather at ${selectedStop.name} · Updated ${new Date().toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit"
-          })} · Open-Meteo`;
-
-      } catch (error) {
-        showWeatherError(
-          "Could not load weather: " + error.message
-        );
-
-      } finally {
-        weatherLoading = false;
-      }
-    }
-
-    function showWeatherError(message) {
-      const weatherError = document.getElementById("weatherError");
-
-      weatherError.textContent = message;
-      weatherError.style.display = "block";
-
-      document.getElementById("weatherDescription").textContent =
-        "Weather unavailable";
-
-      document.getElementById("weatherAdvice").textContent =
-        "Weather data could not be retrieved. Please try refreshing.";
-    }
-
-    stopSelect.addEventListener("change", () => {
-      nearestResult.style.display = "none";
-      refreshAll();
+      const km = distanceKm(nearest);
+      const minutes = Math.ceil(km / 5 * 60);
+
+      selectedStop = nearest;
+      $("stopSelect").value = nearest.id;
+      localStorage.setItem("myLUAS-stop", nearest.id);
+      $("routeStopName").textContent = nearest.name;
+
+      $("travelTip").textContent =
+        `📍 ${nearest.name} is your nearest Luas stop, approximately ` +
+        `${km.toFixed(2)} km away (${minutes} min walking at 5 km/h).`;
+
+      $("nearestBtn").textContent = "◎ Nearest stop";
+      $("nearestBtn").disabled = false;
+
+      await refreshAll();
+    }, error => {
+      let message = "Could not access your location.";
+      if (error.code === 1) message = "Location permission denied. Please allow location access.";
+      if (error.code === 2) message = "Your location is currently unavailable.";
+      if (error.code === 3) message = "Location request timed out.";
+
+      showError(message);
+      $("nearestBtn").textContent = "◎ Nearest stop";
+      $("nearestBtn").disabled = false;
+    }, {
+      enableHighAccuracy: true,
+      timeout: 15000,
+      maximumAge: 60000
     });
+  }
 
-    nearestButton.addEventListener("click", findNearest);
+  $("nearestBtn").addEventListener("click", findNearestStop);
+  $("gpsBtn").addEventListener("click", findNearestStop);
 
-    document.getElementById("refreshButton")
-      .addEventListener("click", refreshAll);
+  loadStops();
 
-    loadStops();
+  // Refresh tram arrivals every 20 seconds.
+  refreshTimer = setInterval(() => {
+    if (selectedStop) loadTrams().then(() => {
+      $("updated").textContent =
+        "Last updated: " + new Date().toLocaleTimeString("en-IE");
+    }).catch(error => showError("Automatic tram refresh failed: " + error.message));
+  }, REFRESH_MS);
 
-    // Refresh both public data sources every 20 seconds.
-    setInterval(refreshAll, REFRESH_INTERVAL);
-  </script>
+  // Weather refreshes less frequently to avoid unnecessary API requests.
+  weatherTimer = setInterval(loadWeather, 10 * 60 * 1000);
+</script>
 </body>
 </html>
