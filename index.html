@@ -16,6 +16,7 @@
       --muted: #a3aea5;
       --red: #ed4248;
       --green: #38d982;
+      --yellow: #f2d68b;
       --border: #303a32;
     }
 
@@ -114,6 +115,10 @@
       font-weight: 600;
     }
 
+    button {
+      cursor: pointer;
+    }
+
     .nearest-button {
       width: 100%;
       margin-top: 12px;
@@ -124,7 +129,6 @@
       border-radius: 12px;
       font-size: 15px;
       font-weight: 800;
-      cursor: pointer;
     }
 
     .nearest-button:disabled {
@@ -154,7 +158,7 @@
       margin-bottom: 22px;
       font-size: 14px;
       line-height: 1.5;
-      color: #f2d68b;
+      color: var(--yellow);
     }
 
     .service-message strong {
@@ -163,6 +167,97 @@
       text-transform: uppercase;
       letter-spacing: 1.5px;
       margin-bottom: 5px;
+    }
+
+    /* Weather panel */
+
+    .weather-card {
+      background: linear-gradient(145deg, #202b23, #1a201c);
+      border: 1px solid #385c47;
+      border-radius: 18px;
+      padding: 18px;
+      margin-bottom: 22px;
+    }
+
+    .weather-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .weather-title {
+      color: var(--green);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+
+    .weather-icon {
+      font-size: 38px;
+    }
+
+    .weather-description {
+      color: var(--muted);
+      font-size: 14px;
+      margin-top: 4px;
+    }
+
+    .weather-temperature {
+      font-size: 44px;
+      font-weight: 900;
+      letter-spacing: -2px;
+      margin: 10px 0;
+    }
+
+    .weather-details {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 15px;
+    }
+
+    .weather-detail {
+      background: #151b17;
+      padding: 12px 8px;
+      border-radius: 10px;
+      text-align: center;
+    }
+
+    .weather-detail .value {
+      font-size: 17px;
+      font-weight: 800;
+    }
+
+    .weather-detail .label {
+      color: var(--muted);
+      font-size: 10px;
+      margin-top: 5px;
+      font-weight: 500;
+    }
+
+    .weather-advice {
+      margin-top: 14px;
+      background: #252a20;
+      border-radius: 10px;
+      padding: 12px;
+      color: var(--yellow);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .weather-updated {
+      color: var(--muted);
+      font-size: 10px;
+      margin-top: 12px;
+    }
+
+    .weather-error {
+      display: none;
+      color: #ffb9bd;
+      font-size: 12px;
+      margin-top: 10px;
     }
 
     .line-heading {
@@ -273,6 +368,7 @@
       color: var(--muted);
       font-size: 12px;
       text-align: center;
+      line-height: 1.6;
     }
 
     .error {
@@ -305,7 +401,6 @@
       border-radius: 10px;
       padding: 10px 16px;
       font-size: 13px;
-      cursor: pointer;
     }
 
     @media (min-width: 600px) {
@@ -350,6 +445,54 @@
       </div>
     </section>
 
+    <!-- Open-Meteo weather panel -->
+    <section class="weather-card">
+      <div class="weather-top">
+        <div>
+          <div class="weather-title">Weather at your stop</div>
+          <div id="weatherStop" class="weather-description">
+            Waiting for stop information...
+          </div>
+        </div>
+        <div class="weather-icon" id="weatherIcon">🌤️</div>
+      </div>
+
+      <div class="weather-temperature" id="weatherTemperature">
+        --°C
+      </div>
+
+      <div class="weather-description" id="weatherDescription">
+        Loading weather...
+      </div>
+
+      <div class="weather-details">
+        <div class="weather-detail">
+          <div class="value" id="weatherRain">--</div>
+          <div class="label">Precipitation</div>
+        </div>
+
+        <div class="weather-detail">
+          <div class="value" id="weatherProbability">--</div>
+          <div class="label">Rain probability</div>
+        </div>
+
+        <div class="weather-detail">
+          <div class="value" id="weatherWind">--</div>
+          <div class="label">Wind km/h</div>
+        </div>
+      </div>
+
+      <div class="weather-advice" id="weatherAdvice">
+        Checking weather conditions...
+      </div>
+
+      <div class="weather-updated" id="weatherUpdated">
+        Weather source: Open-Meteo
+      </div>
+
+      <div class="weather-error" id="weatherError"></div>
+    </section>
+
     <div id="directions">
       <div class="empty">Loading tram forecasts...</div>
     </div>
@@ -364,14 +507,16 @@
     </button>
 
     <footer>
-      Data: Transport Infrastructure Ireland.<br>
-      Built by YOUR NAME for BDAIB.
+      Data: Transport Infrastructure Ireland & Open-Meteo.<br>
+      Built by Avijit Mondal for BDAIB.
     </footer>
 
   </main>
 
   <script>
     const API = "https://luas-class.kluxy.app";
+    const WEATHER_API = "https://api.open-meteo.com/v1/forecast";
+
     const REFRESH_INTERVAL = 20000;
     const EARTH_RADIUS_KM = 6371;
     const WALKING_SPEED_KMH = 5;
@@ -386,6 +531,7 @@
 
     let stops = [];
     let isLoading = false;
+    let weatherLoading = false;
 
     function showError(message) {
       errorElement.style.display = "block";
@@ -429,10 +575,10 @@
         stopSelect.innerHTML = "";
 
         const redGroup = document.createElement("optgroup");
-        redGroup.label = "🔴 Red Line";
+        redGroup.label = "Red Line";
 
         const greenGroup = document.createElement("optgroup");
-        greenGroup.label = "🟢 Green Line";
+        greenGroup.label = "Green Line";
 
         stops.forEach(stop => {
           const option = document.createElement("option");
@@ -454,18 +600,24 @@
           stopSelect.value = stops[0].id;
         }
 
-        await loadForecast();
+        await refreshAll();
 
       } catch (error) {
         showError("Could not load stops: " + error.message);
       }
     }
 
+    async function refreshAll() {
+      await Promise.allSettled([
+        loadForecast(),
+        loadWeather()
+      ]);
+    }
+
     async function loadForecast() {
       if (isLoading) return;
 
       isLoading = true;
-      clearError();
 
       const stopId = stopSelect.value;
 
@@ -496,7 +648,7 @@
           });
 
       } catch (error) {
-        showError("Could not load forecasts: " + error.message);
+        showError("Could not load tram forecasts: " + error.message);
 
         directionsElement.innerHTML =
           '<div class="empty">Forecasts unavailable.</div>';
@@ -602,7 +754,7 @@
       });
     }
 
-    // Haversine formula: distance between two points on Earth.
+    // Haversine formula: distance between geographic coordinates.
     function haversine(lat1, lng1, lat2, lng2) {
       const toRadians = degrees =>
         degrees * Math.PI / 180;
@@ -692,13 +844,10 @@
             const roundedMinutes =
               Math.max(1, Math.round(walkingMinutes));
 
-            // Automatically select nearest stop.
             stopSelect.value = nearest.id;
 
-            // Remember the nearest stop.
             localStorage.setItem("myLUAS-stop", nearest.id);
 
-            // Show distance and estimated walking time.
             nearestResult.style.display = "block";
 
             nearestResult.innerHTML = `
@@ -709,8 +858,7 @@
               <br><small>Estimated at 5 km/h</small>
             `;
 
-            // Load live tram forecast for nearest stop.
-            await loadForecast();
+            await refreshAll();
 
           } catch (error) {
             showError(error.message);
@@ -756,19 +904,204 @@
       );
     }
 
+    // Convert Open-Meteo WMO weather codes into readable descriptions.
+    function getWeatherInfo(code) {
+      const weatherCodes = {
+        0: ["Clear sky", "☀️"],
+        1: ["Mainly clear", "🌤️"],
+        2: ["Partly cloudy", "⛅"],
+        3: ["Overcast", "☁️"],
+        45: ["Fog", "🌫️"],
+        48: ["Depositing rime fog", "🌫️"],
+        51: ["Light drizzle", "🌦️"],
+        53: ["Moderate drizzle", "🌦️"],
+        55: ["Dense drizzle", "🌧️"],
+        56: ["Freezing drizzle", "🌧️"],
+        57: ["Heavy freezing drizzle", "🌧️"],
+        61: ["Light rain", "🌧️"],
+        63: ["Moderate rain", "🌧️"],
+        65: ["Heavy rain", "🌧️"],
+        66: ["Freezing rain", "🌧️"],
+        67: ["Heavy freezing rain", "🌧️"],
+        71: ["Light snow", "🌨️"],
+        73: ["Moderate snow", "🌨️"],
+        75: ["Heavy snow", "❄️"],
+        77: ["Snow grains", "❄️"],
+        80: ["Light rain showers", "🌦️"],
+        81: ["Moderate rain showers", "🌧️"],
+        82: ["Heavy rain showers", "🌧️"],
+        85: ["Snow showers", "🌨️"],
+        86: ["Heavy snow showers", "🌨️"],
+        95: ["Thunderstorm", "⛈️"],
+        96: ["Thunderstorm with hail", "⛈️"],
+        99: ["Heavy thunderstorm with hail", "⛈️"]
+      };
+
+      return weatherCodes[code] || ["Unknown conditions", "🌡️"];
+    }
+
+    async function loadWeather() {
+      if (weatherLoading) return;
+
+      const selectedStop = stops.find(
+        stop => stop.id === stopSelect.value
+      );
+
+      if (!selectedStop) return;
+
+      const lat = Number(selectedStop.lat);
+      const lng = Number(selectedStop.lng);
+
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+        showWeatherError("The selected stop has invalid coordinates.");
+        return;
+      }
+
+      weatherLoading = true;
+
+      document.getElementById("weatherStop").textContent =
+        selectedStop.name;
+
+      document.getElementById("weatherError").style.display = "none";
+
+      try {
+        const url = new URL(WEATHER_API);
+
+        url.searchParams.set("latitude", lat);
+        url.searchParams.set("longitude", lng);
+
+        url.searchParams.set(
+          "current",
+          "temperature_2m,precipitation,weather_code,wind_speed_10m"
+        );
+
+        url.searchParams.set(
+          "hourly",
+          "precipitation_probability"
+        );
+
+        url.searchParams.set("forecast_days", "1");
+        url.searchParams.set("timezone", "auto");
+
+        const data = await fetchJSON(url.toString());
+
+        const current = data.current;
+
+        if (!current) {
+          throw new Error("Weather response has no current data.");
+        }
+
+        const temperature = current.temperature_2m;
+        const precipitation = current.precipitation;
+        const wind = current.wind_speed_10m;
+        const weatherCode = current.weather_code;
+
+        const weatherInfo = getWeatherInfo(weatherCode);
+
+        document.getElementById("weatherIcon").textContent =
+          weatherInfo[1];
+
+        document.getElementById("weatherTemperature").textContent =
+          `${Math.round(temperature)}°C`;
+
+        document.getElementById("weatherDescription").textContent =
+          weatherInfo[0];
+
+        document.getElementById("weatherRain").textContent =
+          `${Number(precipitation).toFixed(1)} mm`;
+
+        document.getElementById("weatherWind").textContent =
+          `${Math.round(wind)}`;
+
+        // Find precipitation probability for the current hour.
+        let rainProbability = null;
+
+        if (data.hourly?.time && data.hourly?.precipitation_probability) {
+          const currentHour = current.time.slice(0, 13);
+
+          const hourIndex = data.hourly.time.findIndex(
+            time => time.slice(0, 13) === currentHour
+          );
+
+          if (hourIndex >= 0) {
+            rainProbability =
+              data.hourly.precipitation_probability[hourIndex];
+          }
+        }
+
+        document.getElementById("weatherProbability").textContent =
+          rainProbability !== null
+            ? `${rainProbability}%`
+            : "N/A";
+
+        // Generate a practical travel recommendation.
+        let advice;
+
+        if (
+          precipitation > 0 ||
+          (rainProbability !== null && rainProbability >= 50) ||
+          [51, 53, 55, 56, 57, 61, 63, 65, 66, 67,
+           80, 81, 82, 95, 96, 99].includes(weatherCode)
+        ) {
+          advice =
+            "☔ Rain is possible or occurring. Consider bringing an umbrella or waiting indoors while checking your tram arrival.";
+        } else if (wind >= 40) {
+          advice =
+            "💨 Strong winds are expected. Take care while walking to the stop.";
+        } else if (temperature <= 5) {
+          advice =
+            "🧥 It is cold outside. Dress warmly while waiting for your Luas.";
+        } else {
+          advice =
+            "🌤️ Conditions look relatively dry. Check your live tram arrivals before heading to the stop.";
+        }
+
+        document.getElementById("weatherAdvice").textContent =
+          advice;
+
+        document.getElementById("weatherUpdated").textContent =
+          `Weather at ${selectedStop.name} · Updated ${new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit"
+          })} · Open-Meteo`;
+
+      } catch (error) {
+        showWeatherError(
+          "Could not load weather: " + error.message
+        );
+
+      } finally {
+        weatherLoading = false;
+      }
+    }
+
+    function showWeatherError(message) {
+      const weatherError = document.getElementById("weatherError");
+
+      weatherError.textContent = message;
+      weatherError.style.display = "block";
+
+      document.getElementById("weatherDescription").textContent =
+        "Weather unavailable";
+
+      document.getElementById("weatherAdvice").textContent =
+        "Weather data could not be retrieved. Please try refreshing.";
+    }
+
     stopSelect.addEventListener("change", () => {
       nearestResult.style.display = "none";
-      loadForecast();
+      refreshAll();
     });
 
     nearestButton.addEventListener("click", findNearest);
 
     document.getElementById("refreshButton")
-      .addEventListener("click", loadForecast);
+      .addEventListener("click", refreshAll);
 
     loadStops();
 
-    setInterval(loadForecast, REFRESH_INTERVAL);
+    // Refresh both public data sources every 20 seconds.
+    setInterval(refreshAll, REFRESH_INTERVAL);
   </script>
 </body>
 </html>
